@@ -168,3 +168,395 @@ void keyPressed() {
 boolean sketchFullScreen() {
   return true;
 }
+
+class Interface {
+
+  void drawInterface(float xloc, float yloc, int sizeX, int sizeY, int num) {
+    float grayvalues = 255/num;
+    float steps = sizeY/num;
+    noStroke();
+    for (int i = 0; i < num; i++) {
+      fill(i*grayvalues);
+      ellipse(xloc, yloc, sizeX - i*steps, sizeY - i*steps);
+    }
+  }
+  void rescale() {
+    background(0);        // Interface nur 1 mal laden. ;)
+    fill(255);
+    text("scale " + scale, 10, 10);
+    text("scaleOffset " + scaleOffset, 10, 30);
+    tone = scal.scales.get(scale).length;
+    if (noiseMap) randomSounds(0.003);
+    if (interFace) drawInterface(width*0.5, height*0.5, floor(width), floor(height), tone);
+    loadPixels();
+  }
+  void randomSounds(float increment) {
+    loadPixels();
+    float xoff = 0.0; 
+    noiseDetail(2, 0.6);
+    for (int x = 0; x < width; x++) {
+      xoff += increment;  
+      float yoff = 0.0;   
+      for (int y = 0; y < height; y++) {
+        yoff += increment; 
+        float bright = noise(xoff, yoff) * 290;
+        pixels[x+y*width] = color(bright);
+      }
+    }  
+    updatePixels();
+    filter(POSTERIZE, tone+1);
+  }
+}
+
+/* The map2() function supports the following easing types */
+final int LINEAR = 0;
+final int QUADRATIC = 1;
+final int CUBIC = 2;
+final int QUARTIC = 3;
+final int QUINTIC = 4;
+final int SINUSOIDAL = 5;
+final int EXPONENTIAL = 6;
+final int CIRCULAR = 7;
+final int SQRT = 8;
+
+/* When the easing is applied (in, out, or both) */
+final int EASE_IN = 0;
+final int EASE_OUT = 1;
+final int EASE_IN_OUT = 2;
+
+/*
+ * A map() replacement that allows for specifying easing curves
+ * with arbitrary exponents.
+ *
+ * value :   The value to map
+ * start1:   The lower limit of the input range
+ * stop1 :   The upper limit of the input range
+ * start2:   The lower limit of the output range
+ * stop2 :   The upper limit of the output range
+ * type  :   The type of easing (see above)
+ * when  :   One of EASE_IN, EASE_OUT, or EASE_IN_OUT
+ */
+float map2(float value, float start1, float stop1, float start2, float stop2, int type, int when) {
+  float b = start2;
+  float c = stop2 - start2;
+  float t = value - start1;
+  float d = stop1 - start1;
+  float p = 0.5;
+  switch (type) {
+  case LINEAR:
+    return c*t/d + b;
+  case SQRT:
+    if (when == EASE_IN) {
+      t /= d;
+      return c*pow(t, p) + b;
+    } else if (when == EASE_OUT) {
+      t /= d;
+      return c * (1 - pow(1 - t, p)) + b;
+    } else if (when == EASE_IN_OUT) {
+      t /= d/2;
+      if (t < 1) return c/2*pow(t, p) + b;
+      return c/2 * (2 - pow(2 - t, p)) + b;
+    }
+    break;
+  case QUADRATIC:
+    if (when == EASE_IN) {
+      t /= d;
+      return c*t*t + b;
+    } else if (when == EASE_OUT) {
+      t /= d;
+      return -c * t*(t-2) + b;
+    } else if (when == EASE_IN_OUT) {
+      t /= d/2;
+      if (t < 1) return c/2*t*t + b;
+      t--;
+      return -c/2 * (t*(t-2) - 1) + b;
+    }
+    break;
+  case CUBIC:
+    if (when == EASE_IN) {
+      t /= d;
+      return c*t*t*t + b;
+    } else if (when == EASE_OUT) {
+      t /= d;
+      t--;
+      return c*(t*t*t + 1) + b;
+    } else if (when == EASE_IN_OUT) {
+      t /= d/2;
+      if (t < 1) return c/2*t*t*t + b;
+      t -= 2;
+      return c/2*(t*t*t + 2) + b;
+    }
+    break;
+  case QUARTIC:
+    if (when == EASE_IN) {
+      t /= d;
+      return c*t*t*t*t + b;
+    } else if (when == EASE_OUT) {
+      t /= d;
+      t--;
+      return -c * (t*t*t*t - 1) + b;
+    } else if (when == EASE_IN_OUT) {
+      t /= d/2;
+      if (t < 1) return c/2*t*t*t*t + b;
+      t -= 2;
+      return -c/2 * (t*t*t*t - 2) + b;
+    }
+    break;
+  case QUINTIC:
+    if (when == EASE_IN) {
+      t /= d;
+      return c*t*t*t*t*t + b;
+    } else if (when == EASE_OUT) {
+      t /= d;
+      t--;
+      return c*(t*t*t*t*t + 1) + b;
+    } else if (when == EASE_IN_OUT) {
+      t /= d/2;
+      if (t < 1) return c/2*t*t*t*t*t + b;
+      t -= 2;
+      return c/2*(t*t*t*t*t + 2) + b;
+    }
+    break;
+  case SINUSOIDAL:
+    if (when == EASE_IN) {
+      return -c * cos(t/d * (PI/2)) + c + b;
+    } else if (when == EASE_OUT) {
+      return c * sin(t/d * (PI/2)) + b;
+    } else if (when == EASE_IN_OUT) {
+      return -c/2 * (cos(PI*t/d) - 1) + b;
+    }
+    break;
+  case EXPONENTIAL:
+    if (when == EASE_IN) {
+      return c * pow( 2, 10 * (t/d - 1) ) + b;
+    } else if (when == EASE_OUT) {
+      return c * ( -pow( 2, -10 * t/d ) + 1 ) + b;
+    } else if (when == EASE_IN_OUT) {
+      t /= d/2;
+      if (t < 1) return c/2 * pow( 2, 10 * (t - 1) ) + b;
+      t--;
+      return c/2 * ( -pow( 2, -10 * t) + 2 ) + b;
+    }
+    break;
+  case CIRCULAR:
+    if (when == EASE_IN) {
+      t /= d;
+      return -c * (sqrt(1 - t*t) - 1) + b;
+    } else if (when == EASE_OUT) {
+      t /= d;
+      t--;
+      return c * sqrt(1 - t*t) + b;
+    } else if (when == EASE_IN_OUT) {
+      t /= d/2;
+      if (t < 1) return -c/2 * (sqrt(1 - t*t) - 1) + b;
+      t -= 2;
+      return c/2 * (sqrt(1 - t*t) + 1) + b;
+    }
+    break;
+  };
+  return 0;
+}
+
+/*
+ * A map() replacement that allows for specifying easing curves
+ * with arbitrary exponents.
+ *
+ * value :   The value to map
+ * start1:   The lower limit of the input range
+ * stop1 :   The upper limit of the input range
+ * start2:   The lower limit of the output range
+ * stop2 :   The upper limit of the output range
+ * v     :   The exponent value (e.g., 0.5, 0.1, 0.3)
+ * when  :   One of EASE_IN, EASE_OUT, or EASE_IN_OUT
+ */
+float map3(float value, float start1, float stop1, float start2, float stop2, float v, int when) {
+  float b = start2;
+  float c = stop2 - start2;
+  float t = value - start1;
+  float d = stop1 - start1;
+  float p = v;
+  float out = 0;
+  if (when == EASE_IN) {
+    t /= d;
+    out = c*pow(t, p) + b;
+  } else if (when == EASE_OUT) {
+    t /= d;
+    out = c * (1 - pow(1 - t, p)) + b;
+  } else if (when == EASE_IN_OUT) {
+    t /= d/2;
+    if (t < 1) return c/2*pow(t, p) + b;
+    out = c/2 * (2 - pow(2 - t, p)) + b;
+  }
+  return out;
+}
+
+class Osci {
+  WavePlayer osc01, osc02, osc03, osc04;
+  Glide oscGainGlide12, oscGainGlide34, wsGainValue;
+  Gain g, oscGain12, oscGain34, wsG;
+  Panner p;
+  WaveShaper ws;
+  Buffer HqSINE, HqSAW, HqSQUARE, HqTRIANGLE, HqNOISE;
+  boolean isAlive;
+  float x, y, yClamp;
+
+  int index = 0;
+  Osci() {
+    isAlive = false;
+    HqSINE = new SineBuffer().generateBuffer(32768);
+    HqSAW = new SawBuffer().generateBuffer(32768);
+    HqSQUARE = new SquareBuffer().generateBuffer(32768);
+    HqTRIANGLE = new TriangleBuffer().generateBuffer(32768);
+    HqNOISE = new NoiseBuffer().generateBuffer(32768);
+    osc01 = new WavePlayer(ac, 64, HqSINE);
+    osc02 = new WavePlayer(ac, 64, HqSINE);    
+    osc03 = new WavePlayer(ac, 64, HqSINE);
+    osc04 = new WavePlayer(ac, 64, HqSINE);
+    oscGainGlide12 = new Glide(ac, 0, 21);
+    oscGainGlide34 = new Glide(ac, 0, 21); 
+    oscGain12 = new Gain(ac, 1, oscGainGlide12);  
+    oscGain34 = new Gain(ac, 1, oscGainGlide34);
+    p = new Panner(ac, 0);
+    g = new Gain(ac, 1, 0.3);
+    oscGain12.addInput(osc01);
+    oscGain12.addInput(osc02);
+    oscGain34.addInput(osc03);
+    oscGain34.addInput(osc04);
+    wsGainValue = new Glide(ac, 0.0, 330);
+    wsG = new Gain(ac, 1, wsGainValue);
+    wsG.addInput(osc01);
+    wsG.addInput(osc02);
+    float[] WaveShape1 = {
+      0.0, 0.9, 0.1, 0.9, -0.9, 0.0, -0.9, 0.9, -0.3, -0.9, -0.5
+    };
+    ws = new WaveShaper(ac, WaveShape1);
+    ws.addInput(wsG);
+    g.addInput(ws);
+    g.addInput(oscGain34);
+    p.addInput(g);
+    r.addInput(g);
+    delayIn.addInput(g);
+    p.addInput(r);    
+    ac.out.addInput(p);
+  }
+
+  void setAlive(boolean a) {
+    this.isAlive = a;
+  }
+
+  void setMorph() {
+    yClamp = y;                 // OutOfBounds vermeiden. ;)
+    if (yClamp >= height-20) {
+      yClamp = height-20;
+    } else if (yClamp <= 20) {
+      yClamp = 20;
+    } 
+    if (this.isAlive) {
+      float Yoben = constrain(yClamp, 0, height/2+height/12);
+      float Yunten = constrain(yClamp, height/2-height/12, height);
+      float morph12 = map2( Yoben, 0, height/2+height/12, 0.67, 0, 8, EASE_OUT);
+      float morph34 = map2( Yunten, height/2-height/12, height, 0, 0.3, 8, EASE_IN);
+      oscGainGlide12.setValue(morph12);
+      oscGainGlide34.setValue(morph34);
+      wsGainValue.setValue(map2(Yoben, 0, height/2+height/12, 0.2, 0.0, 8, EASE_IN));
+    } else {
+      oscGainGlide12.setValue(0.0);
+      oscGainGlide34.setValue(0.0);
+      wsGainValue.setValue(0);
+    }
+  }
+
+  void setFreq(float detune) {
+    int mouseLoc =(int) x + (int)abs(yClamp)*width; 
+    index = (int) abs(map((blue(pixels[mouseLoc])), 0, 255, tone, 0)-1); // Setzt den Array Index Anhand von Grauwerten
+    float freq = scal.freqs.get(scaleOffset+scal.scales.get(scale)[index]);
+    osc01.setFrequency(freq); 
+    osc02.setFrequency(freq * detune); 
+    osc03.setFrequency(freq); 
+    osc04.setFrequency(freq * detune);
+  }
+
+  void setPanning() {
+    p.setPos(map(x, 0, width, -1, 1));
+  }
+
+  void setOsc(int osc) {
+    switch(osc) {
+    case 0:
+      osc01.setBuffer(HqSINE);
+      osc02.setBuffer(HqSINE);
+      osc03.setBuffer(HqSINE);
+      osc04.setBuffer(HqSINE);
+      break;
+    case 1:
+      osc01.setBuffer(HqTRIANGLE);
+      osc02.setBuffer(HqTRIANGLE);
+      osc03.setBuffer(HqTRIANGLE);
+      osc04.setBuffer(HqTRIANGLE);
+      break;
+    case 2:
+      osc01.setBuffer(HqSAW);
+      osc02.setBuffer(HqSAW);
+      osc03.setBuffer(HqSAW);
+      osc04.setBuffer(HqSAW);
+      break;
+    case 3:
+      osc01.setBuffer(HqNOISE);
+      osc02.setBuffer(HqNOISE);
+      osc03.setBuffer(HqSQUARE);
+      osc04.setBuffer(HqSQUARE);
+      break;
+    }
+  }
+}
+
+class Scales {
+
+  HashMap<Integer, int[]> scales = new HashMap<Integer, int[]>();
+  ArrayList<Float> freqs = new ArrayList<Float>();
+
+  int majorScale[] = {0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 24, 26, 28, 29, 31, 33, 35, 36};
+  int minorScale[] = {0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19, 20, 22, 24, 26, 27, 29, 31, 32, 34, 36};
+  int bluesScale[] = {0, 3, 5, 6, 7, 10, 12, 15, 17, 18, 19, 22, 24, 27, 29, 30, 31, 34, 36};
+  int biyuScale[] = {0, 3, 7, 10, 12, 15, 19, 22, 24, 27, 31, 34, 36, 39, 43, 46, 48}; 
+  int chadGadyoScale[] = {0, 2, 3, 5, 7, 12, 14, 15, 17, 19, 24, 26, 27, 29, 31, 36};
+  int jazzMinorScale[] = {0, 2, 3, 5, 7, 9, 11, 12, 14, 15, 17, 19, 21, 23, 24, 26, 27, 29, 31, 33, 35, 36};
+  int jazzMinorInverseScale[] = {0, 1, 3, 5, 7, 9, 10, 12, 13, 15, 17, 19, 21, 22, 24, 25, 27, 29, 31, 33, 34, 36};
+  int hiraJoshiScale[] = {0, 2, 3, 7, 8, 12, 14, 15, 19, 20, 24, 26, 27, 31, 32, 36};
+  int kokinJoshiScale[] = {0, 1, 5, 7, 10, 12, 13, 17, 19, 22, 24, 25, 29, 31, 34, 36};
+  int sakuraPentaScale[] = {0, 1, 5, 7, 8, 12, 13, 17, 19, 20, 24, 25, 29, 31, 32, 36};
+  int hawaiiScale[] = {0, 2, 3, 7, 9, 11, 12, 14, 15, 19, 21, 23, 24, 26, 27, 31, 33, 35, 36};
+  int majorGispy[] = {0, 1, 4, 5, 7, 8, 11, 12, 13, 16, 17, 19, 23, 24, 25, 28, 29, 31, 32, 35, 36};
+  int minorGispy[] = {0, 2, 3, 6, 7, 8, 11, 12, 14, 15, 18, 19, 23, 24, 26, 27, 30, 31, 32, 35, 36};
+
+  void calcScale(float pitch) {
+    for (double i = -4; i <= 4; i++) {
+      double a = pitch * Math.pow(2, i);
+      for (double j = -9; j <= 2; j++) { 
+        double b = a * Math.pow(2, j/12);
+        freqs.add((float)b);
+      }
+    }
+    Collections.sort(freqs);
+  }
+
+  void addScales() {
+    scales.put(0, majorScale);
+    scales.put(1, minorScale);
+    scales.put(2, majorGispy);
+    scales.put(3, minorGispy);
+    scales.put(4, bluesScale); 
+    scales.put(5, biyuScale);    
+    scales.put(6, jazzMinorScale);
+    scales.put(7, jazzMinorInverseScale);
+    scales.put(8, hiraJoshiScale);
+    scales.put(9, kokinJoshiScale); 
+    scales.put(10, sakuraPentaScale);
+    scales.put(11, chadGadyoScale);
+    scales.put(12, hawaiiScale);
+
+//    for (int i = 0; i < scales.size()-1; i++) {
+//      println(scales.get(i));
+//    }
+  }
+}
