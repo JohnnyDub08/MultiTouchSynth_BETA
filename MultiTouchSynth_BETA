@@ -1,0 +1,170 @@
+import java.io.File;
+import java.util.Collections;
+import beads.*;
+import java.util.Arrays; 
+import vialab.SMT.*;
+
+AudioContext ac;
+Scales scal = new Scales();
+Interface inter = new Interface();
+ArrayList<Osci> oscillators = new ArrayList<Osci>();
+float A4 = 432.0;
+int tone;
+int scale = 3;
+int scaleOffset = 24;
+int oscStyle = 0;
+float interval = 1;
+float detune = 0;
+boolean noiseMap;
+int count = 0; // Fingeranzahl
+boolean interFace = true;
+Reverb r;
+TapIn delayIn;
+TapOut delayOut;
+Gain delayGain;
+
+void setup() {
+  size(1920, 1080, SMT.RENDERER);
+  background(0);
+  SMT.init( this, TouchSource.AUTOMATIC);
+  SMT.setTouchDraw(TouchDraw.NONE);
+  SMT.setTrailEnabled(false);
+  scal.calcScale(A4);  // Die Frequenzen werden nach Grundton A4 berechnet.
+  scal.addScales();
+  tone = scal.scales.get(scale).length-1;
+  inter.drawInterface(width*0.5, height*0.5, floor(width), floor(height), tone);
+  ac = new AudioContext();
+  r = new Reverb(ac, 1);
+  r.setSize(1);
+  r.setDamping(0.5);
+  r.setEarlyReflectionsLevel(0.3);
+  r.setLateReverbLevel(0.3);
+
+  // Delay
+  delayIn = new TapIn(ac, 1200);  // max delaytime 1000
+  //delayIn.addInput(g);
+  delayOut = new TapOut(ac, delayIn, 220);
+  delayGain = new Gain(ac, 1, 0.8);
+  delayGain.addInput(delayOut);
+  delayIn.addInput(delayGain); // Delay Feedback 
+  delayIn.addInput(r);
+
+  oscillators.add(new Osci());
+  oscillators.add(new Osci());
+  oscillators.add(new Osci());
+  oscillators.add(new Osci());
+  ac.start();
+  loadPixels();
+}
+
+void draw() {
+  count = fingerDown();
+  osciLogic();
+}
+
+public int fingerDown() {
+  int count = SMT.getTouchCount();
+  return count;
+}
+
+
+void osciLogic() {
+  if (count == 0) { 
+    oscillators.get(0).setAlive(false);
+    oscillators.get(1).setAlive(false);
+    oscillators.get(2).setAlive(false);
+    oscillators.get(3).setAlive(false);
+  } else if (count == 1) {
+    oscillators.get(0).setAlive(true);
+    oscillators.get(1).setAlive(false);
+    oscillators.get(2).setAlive(false);
+    oscillators.get(3).setAlive(false);
+  } else if (count == 2) {
+    oscillators.get(0).setAlive(true);
+    oscillators.get(1).setAlive(true);
+    oscillators.get(2).setAlive(false);
+    oscillators.get(3).setAlive(false);
+  } else if (count == 3) {
+    oscillators.get(0).setAlive(true);
+    oscillators.get(1).setAlive(true);
+    oscillators.get(2).setAlive(true);
+    oscillators.get(3).setAlive(false);
+  } 
+
+  for ( int i = 0; i < SMT.getTouches ().length && SMT.getTouches ().length <= 3; i++) {
+    oscillators.get(i).x = SMT.getTouches ()[i].getX();
+    oscillators.get(i).y = SMT.getTouches ()[i].getY();
+  }
+
+  for (int i = 0; i < oscillators.size (); i++) {
+    oscillators.get(i).setMorph();
+    oscillators.get(i).setFreq(interval + detune);
+    oscillators.get(i).setPanning();
+  }
+}
+
+void keyPressed() {
+  if (key == 'y' || key == 'Y') {
+    interval = 1.3333;
+  } else if (key == 'x' || key == 'X') {
+    interval = 1.5;
+  } else if (key == 'c' || key == 'C') {
+    interval = 1.666;
+  } else if (key == 'v' || key == 'V') {
+    interval = 0.5;
+  } else if (key == 'b' || key == 'B') {
+    interval = 2;
+  } else if (key == 'n' || key == 'N') {
+    interval = 1;
+    detune = 0;
+  } else if (key == 'm' || key == 'M') {
+    oscStyle++;
+    if (oscStyle > 3) oscStyle = 0;
+    oscillators.get(0).setOsc(oscStyle);
+  } else if (key == 'a' || key == 'A') {
+    interFace = true;
+    noiseMap = false;
+    noiseSeed((int)random(10000));
+    inter.rescale();
+  } else if (key == 's' || key == 'S') {
+    interFace = false;
+    noiseMap = true;
+    inter.rescale();
+  } else if (key == 'q' || key == 'Q') {
+    detune -= 0.001;
+  } else if (key == 'w' || key == 'W') {
+    detune += 0.001;
+  }
+  if (key == CODED) {
+    if (keyCode == RIGHT) {
+      scale++;
+      if (scale > scal.scales.size()-1) { 
+        scale = 0;
+      }
+      inter.rescale();
+    } else if (keyCode == LEFT) {
+      scale--;
+      if (scale < 0) { 
+        scale = scal.scales.size()-1;
+      }
+      inter.rescale();
+    } else if (keyCode == DOWN) {
+      scaleOffset--;
+      if (scaleOffset < 0) {
+        scaleOffset = 48;
+      } 
+      inter.rescale();
+    } else if (keyCode == UP) {
+      scaleOffset++;
+      if (scaleOffset > 48) {
+        scaleOffset = 0;
+      } 
+      inter.rescale();
+    } else {
+    }
+  }
+}
+
+boolean sketchFullScreen() {
+  return true;
+}
